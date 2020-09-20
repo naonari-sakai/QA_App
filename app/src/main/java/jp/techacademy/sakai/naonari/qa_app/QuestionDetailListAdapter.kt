@@ -9,6 +9,8 @@ import android.view.ViewGroup
 import android.widget.BaseAdapter
 import android.widget.ImageView
 import android.widget.TextView
+import com.google.firebase.auth.FirebaseAuth
+import kotlinx.android.synthetic.main.list_question_detail.*
 
 class QuestionDetailListAdapter(context: Context,private val mQuestion: Question):BaseAdapter() {
     companion object{
@@ -53,14 +55,32 @@ class QuestionDetailListAdapter(context: Context,private val mQuestion: Question
                 convertView = mLayoutInflater!!.inflate(R.layout.list_question_detail,parent,false)!!
             }
 
+            //ログイン済みのユーザーを取得する
+            val user = FirebaseAuth.getInstance().currentUser
+
+            //ログインしていれば、like_itをvisible
+            if(user != null){
+                val likeIt =  convertView.findViewById<View>(R.id.like_it) as ImageView
+                likeIt.visibility = View.VISIBLE
+            }
+
             val body = mQuestion.body
             val name = mQuestion.name
+            val primarykey = mQuestion.primaryKey
 
             val bodyTextView = convertView.findViewById<View>(R.id.bodyTextView) as TextView
             bodyTextView.text = body
 
             val nameTextView = convertView.findViewById<View>(R.id.nameTextView) as TextView
             nameTextView.text = name
+
+            val questionId = convertView.findViewById<View>(R.id.questionid) as TextView
+            questionId.text = "ID:"+"$primarykey"
+
+            val fivorite = convertView.findViewById<View>(R.id.like_it) as ImageView
+            if (mQuestion.fivorite == true){
+            fivorite.setImageResource(R.drawable.fav_yes)
+            }else{fivorite.setImageResource(R.drawable.fav_no)}
 
             val bytes = mQuestion.imageBytes
             if (bytes.isNotEmpty()){

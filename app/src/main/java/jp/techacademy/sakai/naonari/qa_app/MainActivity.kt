@@ -43,6 +43,7 @@ class MainActivity : AppCompatActivity() ,NavigationView.OnNavigationItemSelecte
                 }else{
                     byteArrayOf()
                 }
+            val  primarykey = map["primarykey"] ?:0.toString()
 
             val answerArrayList = ArrayList<Answer>()
             val answerMap = map["answers"] as Map<String,String>?
@@ -58,7 +59,7 @@ class MainActivity : AppCompatActivity() ,NavigationView.OnNavigationItemSelecte
             }
 
             val question = Question(title, body, name, uid, dataSnapshot.key ?: "",
-            mGenre, bytes, answerArrayList)
+            mGenre, bytes, answerArrayList,primarykey,false)
             mQuestionArrayList.add(question)
             mAdapter.notifyDataSetChanged()
         }

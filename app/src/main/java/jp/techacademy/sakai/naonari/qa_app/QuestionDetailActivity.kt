@@ -3,15 +3,19 @@ package jp.techacademy.sakai.naonari.qa_app
 import android.content.Intent
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
+import android.view.View
+import androidx.preference.PreferenceManager
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.database.*
 import kotlinx.android.synthetic.main.activity_question_detail.*
+import kotlinx.android.synthetic.main.list_question_detail.*
 
 class QuestionDetailActivity : AppCompatActivity() {
 
     private lateinit var mQuestion: Question
     private lateinit var mAdapter: QuestionDetailListAdapter
     private lateinit var mAnswerRef: DatabaseReference
+    private var fivorite = false
 
     private val mEventListener = object : ChildEventListener {
         override fun onChildAdded(dataSnapshot: DataSnapshot, s: String?) {
@@ -62,30 +66,55 @@ class QuestionDetailActivity : AppCompatActivity() {
 
         title = mQuestion.title
 
-        //ListViewの準備
-        mAdapter = QuestionDetailListAdapter(this,mQuestion)
-        listView.adapter = mAdapter
-        mAdapter.notifyDataSetChanged()
+
 
         fab.setOnClickListener {
             //ログイン済みのユーザーを取得する
             val user = FirebaseAuth.getInstance().currentUser
 
-            if (user == null){
+            if (user == null) {
                 //ログインしていなければログイン画面に遷移させる
                 val intent = Intent(applicationContext, LoginActivity::class.java)
                 startActivity(intent)
-            }else{
+            } else {
                 //Questionを渡して回答作成画面を起動する
-                val intent = Intent(applicationContext,AnswerSendActivity::class.java)
-                intent.putExtra("question",mQuestion)
+                val intent = Intent(applicationContext, AnswerSendActivity::class.java)
+                intent.putExtra("question", mQuestion)
                 startActivity(intent)
             }
         }
 
         val dataBaseReference = FirebaseDatabase.getInstance().reference
-        mAnswerRef = dataBaseReference.child(ContentsPATH).child(mQuestion.genre.toString()).child(mQuestion.questionUid).child(
-            AnswersPATH)
+        mAnswerRef = dataBaseReference.child(ContentsPATH).child(mQuestion.genre.toString())
+            .child(mQuestion.questionUid).child(
+            AnswersPATH
+        )
         mAnswerRef.addChildEventListener(mEventListener)
+
+
+    }
+
+    override fun onResume() {
+        super.onResume()
+
+        //preferenceの準備
+        val preference = PreferenceManager.getDefaultSharedPreferences(this)
+        fivorite = preference.getBoolean(mQuestion.primaryKey, false)
+        mQuestion.fivorite = fivorite
+
+        //ListViewの準備
+        mAdapter = QuestionDetailListAdapter(this, mQuestion)
+        listView.adapter = mAdapter
+        mAdapter.notifyDataSetChanged()
+
+        listView.setOnItemClickListener { parent, view, position, id ->
+
+            val editor = preference.edit()
+            editor.putBoolean(mQuestion.primaryKey, !fivorite)
+            editor.commit()
+            mQuestion.fivorite = !(mQuestion.fivorite)
+            mAdapter.notifyDataSetChanged()
+
+        }
     }
 }

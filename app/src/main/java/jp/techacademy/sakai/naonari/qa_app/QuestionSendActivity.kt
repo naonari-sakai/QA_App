@@ -16,14 +16,13 @@ import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import android.provider.MediaStore
 import android.util.Base64
+import android.util.Log
 import android.view.View
 import android.view.inputmethod.InputMethodManager
 import androidx.preference.PreferenceManager
 import com.google.android.material.snackbar.Snackbar
 import com.google.firebase.auth.FirebaseAuth
-import com.google.firebase.database.DatabaseError
-import com.google.firebase.database.DatabaseReference
-import com.google.firebase.database.FirebaseDatabase
+import com.google.firebase.database.*
 import kotlinx.android.synthetic.main.activity_question_send.*
 import java.io.ByteArrayOutputStream
 import java.lang.Exception
@@ -37,11 +36,15 @@ class QuestionSendActivity : AppCompatActivity(), View.OnClickListener,
 
     private var mGenre: Int = 0
     private var mPictureUri: Uri? = null
+    private var primarykey: Int = 0
+    private var mGenreRef: DatabaseReference? = null
+    private var primarykeylist: MutableList<Int> = mutableListOf()
 
     //	渡ってきたジャンルの番号を保持。UIの準備。
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_question_send)
+
 
         //渡ってきたジャンルの番号を保持する
         val extras = intent.extras
@@ -54,6 +57,16 @@ class QuestionSendActivity : AppCompatActivity(), View.OnClickListener,
 
         sendButton.setOnClickListener(this)
         imageView.setOnClickListener(this)
+    }
+
+    override fun onResume() {
+        super.onResume()
+        //課題 プライマリーキーの取得用
+        val mDatabaseReference = FirebaseDatabase.getInstance().reference
+        mGenreRef = mDatabaseReference.child(ContentsPATH).child(mGenre.toString())
+        mGenreRef!!.addChildEventListener(mEventLisner)
+
+        primarykey = primarykeylist.max() ?:0
     }
 
     //Intent連携で取得した画像をリサイズしてImageViewに設定。
@@ -127,6 +140,7 @@ class QuestionSendActivity : AppCompatActivity(), View.OnClickListener,
             val dataBaseReference = FirebaseDatabase.getInstance().reference
             val genreRef = dataBaseReference.child(ContentsPATH).child(mGenre.toString())
 
+
             val data = HashMap<String, String>()
 
             // UID
@@ -135,16 +149,17 @@ class QuestionSendActivity : AppCompatActivity(), View.OnClickListener,
             //タイトルと本文を取得する
             val title = titleText.text.toString()
             val body = bodyText.text.toString()
+            var newPrimarykey = primarykey.plus(1)
 
-            if (title.isEmpty()){
+            if (title.isEmpty()) {
                 //タイトルが入力されていない時はエラーを表示するだけ
-                Snackbar.make(v,"タイトルを入力して下さい",Snackbar.LENGTH_LONG).show()
+                Snackbar.make(v, "タイトルを入力して下さい", Snackbar.LENGTH_LONG).show()
                 return
             }
 
-            if (body.isEmpty()){
+            if (body.isEmpty()) {
                 //質問が入力されていない時はエラーを表示するだけ
-                Snackbar.make(v,"質問を入力して下さい",Snackbar.LENGTH_LONG).show()
+                Snackbar.make(v, "質問を入力して下さい", Snackbar.LENGTH_LONG).show()
                 return
             }
 
@@ -155,22 +170,24 @@ class QuestionSendActivity : AppCompatActivity(), View.OnClickListener,
             data["title"] = title
             data["body"] = body
             data["name"] = name!!
+            data["primarykey"] = newPrimarykey.toString()
+
 
             //添付画像を取得する　as?はキャストに失敗した場合nullを返す
             val drawable = imageView.drawable as? BitmapDrawable
 
             //添付画像が設定されていれば画像を取り出してBASE64エンコードする
             //BASE64は画像を文字列に変換する仕組み
-            if (drawable != null){
+            if (drawable != null) {
                 val bitmap = drawable.bitmap
                 val baos = ByteArrayOutputStream()
-                bitmap.compress(Bitmap.CompressFormat.JPEG,80,baos)
-                val bitmapString = Base64.encodeToString(baos.toByteArray(),Base64.DEFAULT)
+                bitmap.compress(Bitmap.CompressFormat.JPEG, 80, baos)
+                val bitmapString = Base64.encodeToString(baos.toByteArray(), Base64.DEFAULT)
 
                 data["image"] = bitmapString
             }
 
-            genreRef.push().setValue(data,this)
+            genreRef.push().setValue(data, this)
             progressBar.visibility = View.VISIBLE
         }
     }
@@ -179,15 +196,16 @@ class QuestionSendActivity : AppCompatActivity(), View.OnClickListener,
         requestCode: Int,
         permissions: Array<out String>,
         grantResults: IntArray
-    ) {when(requestCode){
-        PERMISSIONS_REQUEST_CODE -> {
-            if (grantResults[0] == PackageManager.PERMISSION_GRANTED){//許可をしたかどうかを判断
-                //ユーザーが許可したとき
-                showChooser()
+    ) {
+        when (requestCode) {
+            PERMISSIONS_REQUEST_CODE -> {
+                if (grantResults[0] == PackageManager.PERMISSION_GRANTED) {//許可をしたかどうかを判断
+                    //ユーザーが許可したとき
+                    showChooser()
+                }
+                return
             }
-            return
         }
-    }
 
     }
 
@@ -200,19 +218,19 @@ class QuestionSendActivity : AppCompatActivity(), View.OnClickListener,
         //カメラで撮影するIntent
         val filename = System.currentTimeMillis().toString() + ".jpg"
         val values = ContentValues()
-        values.put(MediaStore.Images.Media.TITLE,filename)
-        values.put(MediaStore.Images.Media.MIME_TYPE,"image/jpeg")
+        values.put(MediaStore.Images.Media.TITLE, filename)
+        values.put(MediaStore.Images.Media.MIME_TYPE, "image/jpeg")
         mPictureUri = contentResolver
-            .insert(MediaStore.Images.Media.EXTERNAL_CONTENT_URI,values)
+            .insert(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, values)
 
         val cameraIntent = Intent(MediaStore.ACTION_IMAGE_CAPTURE)
-        cameraIntent.putExtra(MediaStore.EXTRA_OUTPUT,mPictureUri)
+        cameraIntent.putExtra(MediaStore.EXTRA_OUTPUT, mPictureUri)
 
         //ギャラリーの選択のＩｎｔｅｎｔｏを与えてcreateChooserメソッドを呼ぶ
-        val chooserIntent = Intent.createChooser(galleryIntent,"画像を取得")
+        val chooserIntent = Intent.createChooser(galleryIntent, "画像を取得")
 
         //EXTRA_INITIAL_INTENTSにカメラ撮影のIntentを追加
-        chooserIntent.putExtra(Intent.EXTRA_INITIAL_INTENTS,arrayOf(cameraIntent))//二つのIntentを表示できる
+        chooserIntent.putExtra(Intent.EXTRA_INITIAL_INTENTS, arrayOf(cameraIntent))//二つのIntentを表示できる
 
         startActivityForResult(chooserIntent, CHOOSER_REQUEST_CODE)
     }
@@ -220,10 +238,40 @@ class QuestionSendActivity : AppCompatActivity(), View.OnClickListener,
     override fun onComplete(databaseError: DatabaseError?, databaseReference: DatabaseReference) {
         progressBar.visibility = View.GONE
 
-        if(databaseError == null){
+        if (databaseError == null) {
             finish()
-        }else{
-            Snackbar.make(findViewById(android.R.id.content),"投稿に失敗しました",Snackbar.LENGTH_LONG).show()
+        } else {
+            Snackbar.make(findViewById(android.R.id.content), "投稿に失敗しました", Snackbar.LENGTH_LONG)
+                .show()
         }
     }
+
+    private val mEventLisner = object : ChildEventListener {
+        override fun onChildAdded(dataSnapshot: DataSnapshot, s: String?) {
+            val map = dataSnapshot.value as Map<String,String>
+            var stringPrimarykey = map["primarykey"] ?: 0.toString()
+            primarykeylist.clear()
+            primarykeylist.add(stringPrimarykey.toInt())
+
+        }
+
+        override fun onChildChanged(dataSnapshot: DataSnapshot, s: String?) {
+
+
+        }
+
+        override fun onChildRemoved(p0: DataSnapshot) {
+
+        }
+
+        override fun onChildMoved(p0: DataSnapshot, p1: String?) {
+
+        }
+
+        override fun onCancelled(p0: DatabaseError) {
+
+        }
+    }
+
+
 }

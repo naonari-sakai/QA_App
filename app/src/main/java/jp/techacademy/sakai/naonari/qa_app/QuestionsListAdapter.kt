@@ -48,6 +48,10 @@ class QuestionsListAdapter(context: Context) : BaseAdapter() {
         val resNum = mQuestionArrayList[position].answers.size
         resText.text = resNum.toString()
 
+        val questionId = convertView.findViewById<View>(R.id.questionid) as TextView
+        val primarykey = mQuestionArrayList[position].primaryKey
+        questionId.text = "ID:"+"$primarykey"
+
         val bytes = mQuestionArrayList[position].imageBytes
         if (bytes.isNotEmpty()){
             val image = BitmapFactory.decodeByteArray(bytes,0,bytes.size).copy(Bitmap.Config.ARGB_8888,true)

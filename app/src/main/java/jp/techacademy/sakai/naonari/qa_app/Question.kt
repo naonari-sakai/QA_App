@@ -10,9 +10,13 @@ class Question(
     val questionUid: String,
     val genre: Int,
     bytes: ByteArray,
-    val answers: ArrayList<Answer>
+    val answers: ArrayList<Answer>,
+    val primaryKey: String,
+    var fivorite: Boolean
 ) : Serializable {
     val imageBytes: ByteArray
+
+
 
     init {
         imageBytes = bytes.clone()
