@@ -10,9 +10,8 @@ import android.widget.BaseAdapter
 import android.widget.ImageView
 import android.widget.TextView
 import com.google.firebase.auth.FirebaseAuth
-import kotlinx.android.synthetic.main.list_question_detail.*
 
-class QuestionDetailListAdapter(context: Context,private val mQuestion: Question):BaseAdapter() {
+class QuestionDetailListAdapter(context: QuestionDetailActivity, private val mQuestion: Question):BaseAdapter() {
     companion object{
         private val TYPE_QUESTION = 0
         private val TYPE_ANSWER = 1
@@ -78,7 +77,7 @@ class QuestionDetailListAdapter(context: Context,private val mQuestion: Question
             questionId.text = "ID:"+"$primarykey"
 
             val fivorite = convertView.findViewById<View>(R.id.like_it) as ImageView
-            if (mQuestion.fivorite == true){
+            if (mQuestion.favorite == true){
             fivorite.setImageResource(R.drawable.fav_yes)
             }else{fivorite.setImageResource(R.drawable.fav_no)}
 

@@ -12,7 +12,7 @@ class Question(
     bytes: ByteArray,
     val answers: ArrayList<Answer>,
     val primaryKey: String,
-    var fivorite: Boolean
+    var favorite: Boolean
 ) : Serializable {
     val imageBytes: ByteArray
 
