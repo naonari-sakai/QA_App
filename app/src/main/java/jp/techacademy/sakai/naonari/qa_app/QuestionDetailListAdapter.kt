@@ -65,7 +65,6 @@ class QuestionDetailListAdapter(context: QuestionDetailActivity, private val mQu
 
             val body = mQuestion.body
             val name = mQuestion.name
-            val primarykey = mQuestion.primaryKey
 
             val bodyTextView = convertView.findViewById<View>(R.id.bodyTextView) as TextView
             bodyTextView.text = body
@@ -73,13 +72,7 @@ class QuestionDetailListAdapter(context: QuestionDetailActivity, private val mQu
             val nameTextView = convertView.findViewById<View>(R.id.nameTextView) as TextView
             nameTextView.text = name
 
-            val questionId = convertView.findViewById<View>(R.id.questionid) as TextView
-            questionId.text = "ID:"+"$primarykey"
-
             val fivorite = convertView.findViewById<View>(R.id.like_it) as ImageView
-            if (mQuestion.favorite == true){
-            fivorite.setImageResource(R.drawable.fav_yes)
-            }else{fivorite.setImageResource(R.drawable.fav_no)}
 
             val bytes = mQuestion.imageBytes
             if (bytes.isNotEmpty()){

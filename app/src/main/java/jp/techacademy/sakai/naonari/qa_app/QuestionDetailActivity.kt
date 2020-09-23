@@ -4,9 +4,13 @@ import android.content.Intent
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import android.util.Log
+import android.view.View
+import android.widget.ImageView
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.database.*
 import kotlinx.android.synthetic.main.activity_question_detail.*
+import kotlinx.android.synthetic.main.list_question_detail.*
+import kotlinx.android.synthetic.main.list_question_detail.view.*
 
 class QuestionDetailActivity : AppCompatActivity() {
 
@@ -14,7 +18,6 @@ class QuestionDetailActivity : AppCompatActivity() {
     private lateinit var mAdapter: QuestionDetailListAdapter
     private lateinit var mAnswerRef: DatabaseReference
     private lateinit var mfavoriteRef: DatabaseReference
-    private lateinit var mUserRef: DatabaseReference
     private var favorite = false
 
     private val mEventListener = object : ChildEventListener {
@@ -59,17 +62,15 @@ class QuestionDetailActivity : AppCompatActivity() {
     private val mFavotiteEventLisner = object : ChildEventListener {
         override fun onChildAdded(dataSnapshot: DataSnapshot, s: String?) {
 
-            var favorite :Boolean = (dataSnapshot.getValue() ?:false) as Boolean
-            Log.d("QA_App","$favorite")
-            mQuestion.favorite = favorite
+            favorite = (dataSnapshot.getValue() ?: false) as Boolean
+            Log.d("QA_App", "$favorite")
 
         }
 
         override fun onChildChanged(dataSnapshot: DataSnapshot, s: String?) {
 
-            var favorite :Boolean = (dataSnapshot.getValue() ?:false) as Boolean
-            Log.d("QA_App","$favorite")
-            mQuestion.favorite = favorite
+            favorite = (dataSnapshot.getValue() ?: false) as Boolean
+            Log.d("QA_App", "$favorite")
 
         }
 
@@ -118,8 +119,8 @@ class QuestionDetailActivity : AppCompatActivity() {
         val dataBaseReference = FirebaseDatabase.getInstance().reference
         mAnswerRef = dataBaseReference.child(ContentsPATH).child(mQuestion.genre.toString())
             .child(mQuestion.questionUid).child(
-            AnswersPATH
-        )
+                AnswersPATH
+            )
         mAnswerRef.addChildEventListener(mEventListener)
 
 
@@ -132,25 +133,42 @@ class QuestionDetailActivity : AppCompatActivity() {
 
         // UID
         var uid = FirebaseAuth.getInstance().currentUser!!.uid
-        Log.d("QA_App","$uid")
-        mfavoriteRef = dataBaseReference.child(FavoritePATH).child(uid).child(mQuestion.primaryKey)
-        mfavoriteRef!!.addChildEventListener(mFavotiteEventLisner)
-        Log.d("QA_App","$mfavoriteRef")
-
 
         //ListViewの準備
         mAdapter = QuestionDetailListAdapter(this, mQuestion)
         listView.adapter = mAdapter
         mAdapter.notifyDataSetChanged()
 
+        Log.d("QA_App", "$uid")
+        if (uid != null) {
+            mfavoriteRef =
+                dataBaseReference.child(FavoritePATH).child(uid).child(mQuestion.questionUid)
+            mfavoriteRef!!.addChildEventListener(mFavotiteEventLisner)
+            Log.d("QA_App", "$mfavoriteRef")
+
+            Log.d("QA_App", "$like_it")
+            if (favorite == true) {
+
+                like_it.setImageResource(R.drawable.fav_yes)
+            } else {
+                like_it.setImageResource(R.drawable.fav_no)
+            }
+        }
+
         listView.setOnItemClickListener { parent, view, position, id ->
 
-            mQuestion.favorite = !(mQuestion.favorite)
-            mfavoriteRef.setValue(mQuestion.favorite)
-            mAdapter = QuestionDetailListAdapter(this, mQuestion)
-            listView.adapter = mAdapter
-            mAdapter.notifyDataSetChanged()
+            if (uid != null) {
+                favorite = !favorite
+                mfavoriteRef.setValue(favorite)
+                if (favorite == true) {
+                    like_it.setImageResource(R.drawable.fav_yes)
+                } else {
+                    like_it.setImageResource(R.drawable.fav_no)
+                }
+            }
 
         }
+
+
     }
 }

@@ -36,9 +36,8 @@ class QuestionSendActivity : AppCompatActivity(), View.OnClickListener,
 
     private var mGenre: Int = 0
     private var mPictureUri: Uri? = null
-    private var primarykey: Int = 0
     private var mGenreRef: DatabaseReference? = null
-    private var primarykeylist: MutableList<Int> = mutableListOf()
+
 
     //	渡ってきたジャンルの番号を保持。UIの準備。
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -57,16 +56,6 @@ class QuestionSendActivity : AppCompatActivity(), View.OnClickListener,
 
         sendButton.setOnClickListener(this)
         imageView.setOnClickListener(this)
-    }
-
-    override fun onResume() {
-        super.onResume()
-        //課題 プライマリーキーの取得用
-        val mDatabaseReference = FirebaseDatabase.getInstance().reference
-        mGenreRef = mDatabaseReference.child(ContentsPATH).child(mGenre.toString())
-        mGenreRef!!.addChildEventListener(mEventLisner)
-
-        primarykey = primarykeylist.max() ?:0
     }
 
     //Intent連携で取得した画像をリサイズしてImageViewに設定。
@@ -149,7 +138,6 @@ class QuestionSendActivity : AppCompatActivity(), View.OnClickListener,
             //タイトルと本文を取得する
             val title = titleText.text.toString()
             val body = bodyText.text.toString()
-            var newPrimarykey = primarykey.plus(1)
 
             if (title.isEmpty()) {
                 //タイトルが入力されていない時はエラーを表示するだけ
@@ -170,7 +158,6 @@ class QuestionSendActivity : AppCompatActivity(), View.OnClickListener,
             data["title"] = title
             data["body"] = body
             data["name"] = name!!
-            data["primarykey"] = newPrimarykey.toString()
 
 
             //添付画像を取得する　as?はキャストに失敗した場合nullを返す
@@ -245,33 +232,4 @@ class QuestionSendActivity : AppCompatActivity(), View.OnClickListener,
                 .show()
         }
     }
-
-    private val mEventLisner = object : ChildEventListener {
-        override fun onChildAdded(dataSnapshot: DataSnapshot, s: String?) {
-            val map = dataSnapshot.value as Map<String,String>
-            var stringPrimarykey = map["primarykey"] ?: 0.toString()
-            primarykeylist.clear()
-            primarykeylist.add(stringPrimarykey.toInt())
-
-        }
-
-        override fun onChildChanged(dataSnapshot: DataSnapshot, s: String?) {
-
-
-        }
-
-        override fun onChildRemoved(p0: DataSnapshot) {
-
-        }
-
-        override fun onChildMoved(p0: DataSnapshot, p1: String?) {
-
-        }
-
-        override fun onCancelled(p0: DatabaseError) {
-
-        }
-    }
-
-
 }

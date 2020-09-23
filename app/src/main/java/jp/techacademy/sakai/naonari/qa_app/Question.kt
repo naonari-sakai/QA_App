@@ -10,9 +10,7 @@ class Question(
     val questionUid: String,
     val genre: Int,
     bytes: ByteArray,
-    val answers: ArrayList<Answer>,
-    val primaryKey: String,
-    var favorite: Boolean
+    val answers: ArrayList<Answer>
 ) : Serializable {
     val imageBytes: ByteArray
 
