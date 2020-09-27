@@ -15,6 +15,7 @@ class QuestionDetailActivity : AppCompatActivity() {
     private lateinit var mAdapter: QuestionDetailListAdapter
     private lateinit var mAnswerRef: DatabaseReference
     private lateinit var mfavoriteRef: DatabaseReference
+    private var favoriteUidlist = ArrayList<String>()
     private var favorite = false
 
     private val mEventListener = object : ChildEventListener {
@@ -56,21 +57,45 @@ class QuestionDetailActivity : AppCompatActivity() {
         }
     }
 
-    private val mFavotiteEventLisner = object : ValueEventListener {
+    private val mFavotiteEventLisner = object : ChildEventListener {
 
-        override fun onDataChange(dataSnapshot: DataSnapshot) {
-            favorite = (dataSnapshot.getValue() ?: false) as Boolean
-            Log.d("QA_App", "$favorite")
-            if (favorite == true) {
+//        override fun onDataChange(dataSnapshot: DataSnapshot) {
+//            favorite = (dataSnapshot.getValue() ?: false) as Boolean
+//            Log.d("QA_App", "$favorite")
+//            if (favorite == true) {
+//                like_it.setImageResource(R.drawable.fav_yes)
+//            } else {
+//                like_it.setImageResource(R.drawable.fav_no)
+//            }
+//        }
+        override fun onChildAdded(dataSnapshot: DataSnapshot, s: String?) {
+            val favoriteUid = dataSnapshot.value as String
+
+            if(favoriteUid == mQuestion.questionUid) {
                 like_it.setImageResource(R.drawable.fav_yes)
+                favorite = true
             } else {
                 like_it.setImageResource(R.drawable.fav_no)
+                favorite = false
             }
+        }
+
+        override fun onChildChanged(dataSnapshot: DataSnapshot, s: String?) {
+
+        }
+
+        override fun onChildRemoved(dataSnapshot: DataSnapshot) {
+
+        }
+
+        override fun onChildMoved(dataSnapshot: DataSnapshot, s: String?) {
+
         }
 
         override fun onCancelled(error: DatabaseError) {
 
         }
+
     }
 
 
@@ -132,8 +157,8 @@ class QuestionDetailActivity : AppCompatActivity() {
              Log.d("QA_App", "$uid")
             if (uid != null) {
                 mfavoriteRef =
-                    dataBaseReference.child(FavoritePATH).child(uid).child(mQuestion.questionUid)
-                mfavoriteRef!!.addValueEventListener(mFavotiteEventLisner)
+                    dataBaseReference.child(FavoritePATH).child(uid)
+                mfavoriteRef!!.addChildEventListener(mFavotiteEventLisner)
 
             }
 
@@ -141,7 +166,12 @@ class QuestionDetailActivity : AppCompatActivity() {
 
                 if (uid != null) {
                     favorite = !favorite
-                    mfavoriteRef.setValue(favorite)
+                    if (favorite == true) {
+                        mfavoriteRef.push().setValue(mQuestion.questionUid)
+                    }else{
+                        mfavoriteRef.push().removeValue()
+                    }
+
                 }
 
             }
