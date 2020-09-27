@@ -4,13 +4,10 @@ import android.content.Intent
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import android.util.Log
-import android.view.View
-import android.widget.ImageView
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.database.*
 import kotlinx.android.synthetic.main.activity_question_detail.*
 import kotlinx.android.synthetic.main.list_question_detail.*
-import kotlinx.android.synthetic.main.list_question_detail.view.*
 
 class QuestionDetailActivity : AppCompatActivity() {
 
@@ -59,30 +56,19 @@ class QuestionDetailActivity : AppCompatActivity() {
         }
     }
 
-    private val mFavotiteEventLisner = object : ChildEventListener {
-        override fun onChildAdded(dataSnapshot: DataSnapshot, s: String?) {
+    private val mFavotiteEventLisner = object : ValueEventListener {
 
+        override fun onDataChange(dataSnapshot: DataSnapshot) {
             favorite = (dataSnapshot.getValue() ?: false) as Boolean
             Log.d("QA_App", "$favorite")
-
+            if (favorite == true) {
+                like_it.setImageResource(R.drawable.fav_yes)
+            } else {
+                like_it.setImageResource(R.drawable.fav_no)
+            }
         }
 
-        override fun onChildChanged(dataSnapshot: DataSnapshot, s: String?) {
-
-            favorite = (dataSnapshot.getValue() ?: false) as Boolean
-            Log.d("QA_App", "$favorite")
-
-        }
-
-        override fun onChildRemoved(p0: DataSnapshot) {
-
-        }
-
-        override fun onChildMoved(p0: DataSnapshot, p1: String?) {
-
-        }
-
-        override fun onCancelled(p0: DatabaseError) {
+        override fun onCancelled(error: DatabaseError) {
 
         }
     }
@@ -131,42 +117,34 @@ class QuestionDetailActivity : AppCompatActivity() {
 
         val dataBaseReference = FirebaseDatabase.getInstance().reference
 
-        // UID
-        var uid = FirebaseAuth.getInstance().currentUser!!.uid
-
         //ListViewの準備
         mAdapter = QuestionDetailListAdapter(this, mQuestion)
         listView.adapter = mAdapter
         mAdapter.notifyDataSetChanged()
 
-        Log.d("QA_App", "$uid")
-        if (uid != null) {
-            mfavoriteRef =
-                dataBaseReference.child(FavoritePATH).child(uid).child(mQuestion.questionUid)
-            mfavoriteRef!!.addChildEventListener(mFavotiteEventLisner)
-            Log.d("QA_App", "$mfavoriteRef")
+        //user
+        val user = FirebaseAuth.getInstance().currentUser
+        if (user != null) {
 
-            Log.d("QA_App", "$like_it")
-            if (favorite == true) {
+            // UID
+            var uid = FirebaseAuth.getInstance().currentUser!!.uid
 
-                like_it.setImageResource(R.drawable.fav_yes)
-            } else {
-                like_it.setImageResource(R.drawable.fav_no)
-            }
-        }
-
-        listView.setOnItemClickListener { parent, view, position, id ->
-
+             Log.d("QA_App", "$uid")
             if (uid != null) {
-                favorite = !favorite
-                mfavoriteRef.setValue(favorite)
-                if (favorite == true) {
-                    like_it.setImageResource(R.drawable.fav_yes)
-                } else {
-                    like_it.setImageResource(R.drawable.fav_no)
-                }
+                mfavoriteRef =
+                    dataBaseReference.child(FavoritePATH).child(uid).child(mQuestion.questionUid)
+                mfavoriteRef!!.addValueEventListener(mFavotiteEventLisner)
+
             }
 
+            listView.setOnItemClickListener { parent, view, position, id ->
+
+                if (uid != null) {
+                    favorite = !favorite
+                    mfavoriteRef.setValue(favorite)
+                }
+
+            }
         }
 
 
