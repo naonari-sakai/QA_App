@@ -141,7 +141,11 @@ class QuestionDetailActivity : AppCompatActivity() {
 
                 if (uid != null) {
                     favorite = !favorite
-                    mfavoriteRef.setValue(favorite)
+                    if (favorite == true) {
+                        mfavoriteRef.setValue(favorite)
+                    }else{
+                        mfavoriteRef.removeValue()
+                    }
                 }
 
             }
