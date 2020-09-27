@@ -9,7 +9,6 @@ import androidx.appcompat.app.AppCompatActivity
 import android.view.Menu
 import android.view.MenuItem
 import android.widget.ListView
-import android.widget.Toolbar
 import androidx.appcompat.app.ActionBarDrawerToggle
 import androidx.core.view.GravityCompat
 import androidx.drawerlayout.widget.DrawerLayout
@@ -129,14 +128,7 @@ class MainActivity : AppCompatActivity() ,NavigationView.OnNavigationItemSelecte
             }
         }
 
-        //ナビゲーションドロワーの設定
-        val drawer = findViewById<DrawerLayout>(R.id.drawer_layout)
-        val toggle = ActionBarDrawerToggle(this,drawer,mToolbar,R.string.app_name,R.string.app_name)
-        drawer.addDrawerListener(toggle)
-        toggle.syncState()
 
-        val navigationView = findViewById<NavigationView>(R.id.nav_view)
-        navigationView.setNavigationItemSelectedListener(this)
 
         //Firebase
         mDatabaseReference = FirebaseDatabase.getInstance().reference
@@ -158,13 +150,29 @@ class MainActivity : AppCompatActivity() ,NavigationView.OnNavigationItemSelecte
 
     override fun onResume() {
         super.onResume()
+
+        //ナビゲーションドロワーの設定
+        val drawer = findViewById<DrawerLayout>(R.id.drawer_layout)
+        val toggle = ActionBarDrawerToggle(this,drawer,mToolbar,R.string.app_name,R.string.app_name)
+        drawer.addDrawerListener(toggle)
+        toggle.syncState()
+
         val navigationView = findViewById<NavigationView>(R.id.nav_view)
+        navigationView.setNavigationItemSelectedListener(this)
 
         // 1:趣味を既定の選択とする
         if(mGenre == 0) {
             onNavigationItemSelected(navigationView.menu.getItem(0))
         }
+
+        val user = FirebaseAuth.getInstance().currentUser
+        if(user != null) {
+            navigationView.menu.findItem(R.id.nav_favorite).setVisible(true)
+        }else{
+            navigationView.menu.findItem(R.id.nav_favorite).setVisible(false)
+        }
     }
+
 
     override fun onCreateOptionsMenu(menu: Menu): Boolean {
         // Inflate the menu; this adds items to the action bar if it is present.
@@ -200,6 +208,15 @@ class MainActivity : AppCompatActivity() ,NavigationView.OnNavigationItemSelecte
         } else if (id == R.id.nav_compter){
             mToolbar.title = "コンピューター"
             mGenre = 4
+        } else if (id == R.id.nav_favorite){
+
+
+            //ログイン済みのユーザーを取得する
+            val user = FirebaseAuth.getInstance().currentUser
+            if(user != null) {
+                val intent = Intent(applicationContext,FavoriteActivity::class.java)
+                startActivity(intent)
+            }
         }
 
         val drawer = findViewById<DrawerLayout>(R.id.drawer_layout)
