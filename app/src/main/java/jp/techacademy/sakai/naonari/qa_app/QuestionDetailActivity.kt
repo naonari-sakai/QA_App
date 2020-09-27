@@ -15,6 +15,7 @@ class QuestionDetailActivity : AppCompatActivity() {
     private lateinit var mAdapter: QuestionDetailListAdapter
     private lateinit var mAnswerRef: DatabaseReference
     private lateinit var mfavoriteRef: DatabaseReference
+
     private var favorite = false
 
     private val mEventListener = object : ChildEventListener {
@@ -141,11 +142,7 @@ class QuestionDetailActivity : AppCompatActivity() {
 
                 if (uid != null) {
                     favorite = !favorite
-                    if (favorite == true) {
-                        mfavoriteRef.setValue(favorite)
-                    }else{
-                        mfavoriteRef.removeValue()
-                    }
+                    mfavoriteRef.setValue(favorite)
                 }
 
             }
