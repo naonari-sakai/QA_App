@@ -15,6 +15,7 @@ class QuestionDetailActivity : AppCompatActivity() {
     private lateinit var mAdapter: QuestionDetailListAdapter
     private lateinit var mAnswerRef: DatabaseReference
     private lateinit var mfavoriteRef: DatabaseReference
+    private var favoritelist = mutableListOf<String>()
 
     private var favorite = false
 
@@ -60,11 +61,16 @@ class QuestionDetailActivity : AppCompatActivity() {
     private val mFavotiteEventLisner = object : ValueEventListener {
 
         override fun onDataChange(dataSnapshot: DataSnapshot) {
-            favorite = (dataSnapshot.getValue() ?: false) as Boolean
-            Log.d("QA_App", "$favorite")
-            if (favorite == true) {
+            val favoritelistFromFirebase = (dataSnapshot.getValue() ?: listOf<String>()) as List<String>
+            favoritelist.clear()
+            favoritelist = favoritelistFromFirebase.toMutableList()
+            Log.d("動作確認","$favoritelist")
+
+            if (favoritelist.contains(mQuestion.questionUid)) {
+                favorite = true
                 like_it.setImageResource(R.drawable.fav_yes)
             } else {
+                favorite = false
                 like_it.setImageResource(R.drawable.fav_no)
             }
         }
@@ -133,7 +139,7 @@ class QuestionDetailActivity : AppCompatActivity() {
              Log.d("QA_App", "$uid")
             if (uid != null) {
                 mfavoriteRef =
-                    dataBaseReference.child(FavoritePATH).child(uid).child(mQuestion.questionUid)
+                    dataBaseReference.child(FavoritePATH).child(uid)
                 mfavoriteRef!!.addValueEventListener(mFavotiteEventLisner)
 
             }
@@ -143,9 +149,14 @@ class QuestionDetailActivity : AppCompatActivity() {
                 if (uid != null) {
                     favorite = !favorite
                     if (favorite == true){
-                    mfavoriteRef.setValue(favorite)
+                        favoritelist.add(mQuestion.questionUid)
+                        val favoritelistToFirebase:List<String> = favoritelist
+                    mfavoriteRef.setValue(favoritelistToFirebase)
                     }else
-                        mfavoriteRef.removeValue()
+                        favoritelist.removeAll { it == mQuestion.questionUid }
+                    val favoritelistToFirebase:List<String> = favoritelist
+                    mfavoriteRef.setValue(favoritelistToFirebase)
+
                 }
 
             }
